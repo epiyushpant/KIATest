@@ -1,0 +1,138 @@
+
+--Employee table 
+CREATE TABLE [dbo].[Employee](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[FullName] [nvarchar](100) NULL,
+	[DOB] [date] NULL,
+	[Gender] [varchar](10) NULL,
+	[Salary] [decimal](18, 2) NULL,
+	[Designation] [varchar](50) NULL,
+	[ImportedDate] [datetime] NULL,
+	[ImportedBy] [varchar](50) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+
+--EmployeeFileDetail table 
+CREATE TABLE [dbo].[EmployeeFileDetail](
+	[EId] [int] NOT NULL,
+	[Photo] [varbinary](max) NULL,
+	[LastUpdatedDate] [date] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[EId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+
+ALTER TABLE [dbo].[EmployeeFileDetail]  WITH CHECK ADD  CONSTRAINT [fk_EId] FOREIGN KEY([EId])
+REFERENCES [dbo].[Employee] ([Id])
+GO
+
+ALTER TABLE [dbo].[EmployeeFileDetail] CHECK CONSTRAINT [fk_EId]
+GO
+
+
+--Procedures 
+
+CREATE  procedure  [dbo].[ImportEmployee] 
+(@FULLNAME NVARCHAR(100) , @DOB DATE , @GENDER VARCHAR(10) , @SALARY decimal(18,2) , @DESIGNATION varchar(50) , @IMPORTEDBY VARCHAR(50) )
+as 
+begin
+INSERT INTO Employee(FullName, DOB, Gender, Salary, Designation, ImportedDate, ImportedBy ) values ( @FULLNAME , @DOB, @GENDER , @SALARY , @DESIGNATION , GETDATE(), @IMPORTEDBY)  ; 
+end 
+GO
+
+
+
+CREATE  procedure  [dbo].[InsertEmployee] 
+(@FULLNAME NVARCHAR(100) , @DOB VARCHAR(100) , @GENDER VARCHAR(10) , @SALARY decimal(18,2) , @DESIGNATION varchar(50) , @PHOTO varbinary(max) )
+as 
+begin
+begin try 
+begin transaction
+Declare @Id int
+INSERT INTO Employee(FullName, DOB, Gender, Salary, Designation) values ( @FULLNAME , @DOB, @GENDER , @SALARY , @DESIGNATION )  ;
+  SELECT @Id = scope_identity();
+Insert Into EmployeeFileDetail(EID , Photo, LastUpdatedDate) values (@Id, @PHOTO, getdate()) ; 
+commit transaction
+end try
+
+begin catch 
+rollback transaction
+end catch 
+end 
+GO
+
+
+
+CREATE  procedure  [dbo].[UpdateEmployee] 
+(@ID int , @FULLNAME NVARCHAR(100) , @DOB VARCHAR(100) , @GENDER VARCHAR(10) , @SALARY decimal(18,2) , @DESIGNATION varchar(50) , @PHOTO varbinary(max) )
+as 
+begin
+Begin try
+Begin Transaction 
+update employee set 
+FullName = @FULLNAME,
+DOB = @DOB,
+Gender= @GENDER,
+Salary= @SALARY,
+Designation = @DESIGNATION
+where Id =@ID ;
+
+if exists(Select EId from EmployeeFileDetail where EId=@Id ) 
+Begin
+Update EmployeeFileDetail set
+EId =@ID,
+Photo =@PHOTO,
+LastUpdatedDate = getdate() ;
+end 
+else 
+begin
+Insert Into EmployeeFileDetail(EID , Photo, LastUpdatedDate) values (@Id, @PHOTO, getdate()) ; 
+end 
+commit transaction
+end try 
+
+begin catch 
+rollback transaction
+end catch
+
+end 
+
+
+CREATE  procedure  [dbo].[GetEmployee] 
+(@Id int   )
+as 
+begin
+SELECT * FROM Employee e left  join EmployeeFileDetail ed on e.Id = ed.EId 
+WHERE Id = CASE WHEN @Id IS NULL THEN Id ELSE @Id end 
+end 
+GO
+
+
+CREATE  procedure  [dbo].[DeleteEmployee] 
+(@ID int)
+as 
+begin
+begin try 
+begin transaction 
+Delete From Employee where Id =@ID ;
+Delete from EmployeeFileDetail where EId =@ID ; 
+commit transaction 
+end try 
+
+begin catch 
+rollback transaction 
+end catch 
+
+end 
+GO
+
+
+
+
+
