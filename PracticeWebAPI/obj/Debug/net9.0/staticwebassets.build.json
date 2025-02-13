@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "5gtQV4X7eCpBbezwVZXcW8Qm0yw7eNG61BK5URRJW+A=",
+  "Source": "KIATestApp",
+  "BasePath": "_content/KIATestApp",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}
